@@ -41,6 +41,15 @@ LF: 2   | CRLF: 0   | CR: 0   | lf     | test_lf.txt
 LF: 2   | CRLF: 0   | CR: 0   | lf     | test_mixed.txt
 ```
 
+### Find Non-Matching Files
+List files that do NOT match a specific line ending variant:
+
+```powershell
+./zig-out/bin/crlf not lf "src/**/*.zig"
+```
+
+This is useful for finding files that need conversion to a specific variant.
+
 ### Convert Line Endings
 Convert files to a specific variant (`win`/`crlf`, `unix`/`lf`, or `mac`/`cr`):
 

@@ -20,13 +20,23 @@ pub fn main() !void {
 
     if (mem.eql(u8, command, "check")) {
         if (args.len < 3) {
-            std.debug.print("Usage: zig_crlf check <glob_pattern>\n", .{});
+            std.debug.print("Usage: crlf check <glob_pattern> ...\n", .{});
             return;
         }
-        try handleCheck(allocator, args[2..]);
+        try handleCheck(allocator, null, args[2..]);
+    } else if (mem.eql(u8, command, "not")) {
+        if (args.len < 4) {
+            std.debug.print("Usage: crlf not <variant> <glob_pattern> ...\n", .{});
+            return;
+        }
+        const filter_variant = zig_crlf.LineEndingVariant.fromString(args[2]) orelse {
+            std.debug.print("Invalid variant: {s}. Use win, unix, mac, crlf, lf, or cr.\n", .{args[2]});
+            return;
+        };
+        try handleCheck(allocator, filter_variant, args[3..]);
     } else if (mem.eql(u8, command, "convert")) {
         if (args.len < 4) {
-            std.debug.print("Usage: zig_crlf convert <target_variant> <glob_pattern>\n", .{});
+            std.debug.print("Usage: crlf convert <target_variant> <glob_pattern> ...\n", .{});
             return;
         }
         const target_variant = zig_crlf.LineEndingVariant.fromString(args[2]) orelse {
@@ -40,7 +50,7 @@ pub fn main() !void {
     }
 }
 
-fn handleCheck(allocator: mem.Allocator, patterns: []const [:0]u8) !void {
+fn handleCheck(allocator: mem.Allocator, filter_variant: ?zig_crlf.LineEndingVariant, patterns: []const [:0]u8) !void {
     var dir = try fs.cwd().openDir(".", .{ .iterate = true });
     defer dir.close();
 
@@ -59,6 +69,12 @@ fn handleCheck(allocator: mem.Allocator, patterns: []const [:0]u8) !void {
                 defer allocator.free(content);
 
                 const info = zig_crlf.detectLineEndings(content);
+
+                // If filter_variant is provided, only print if it DOES NOT match
+                if (filter_variant) |fv| {
+                    if (info.variant == fv) break;
+                }
+
                 std.debug.print("LF: {d: <3} | CRLF: {d: <3} | CR: {d: <3} | {s: <6} | {s}\n", .{
                     info.lf_count,
                     info.crlf_count,
@@ -93,7 +109,7 @@ fn handleConvert(allocator: mem.Allocator, target: zig_crlf.LineEndingVariant, p
                 defer allocator.free(converted);
 
                 if (mem.eql(u8, content, converted)) {
-                    std.debug.print("Skipping {s} (already correct)\n", .{entry.path});
+                    // std.debug.print("Skipping {s} (already correct)\n", .{entry.path});
                     break;
                 }
 
@@ -114,10 +130,12 @@ fn printHelp() void {
         \\
         \\Usage:
         \\  crlf check <glob_pattern> ...
+        \\  crlf not <variant> <glob_pattern> ...
         \\  crlf convert <variant> <glob_pattern> ...
         \\
         \\Commands:
         \\  check    Analyze files and show their line ending variants.
+        \\  not      Analyze files and show those that DO NOT match the specified variant.
         \\  convert  Convert line endings in files to a specific variant.
         \\
         \\Variants:
@@ -134,8 +152,9 @@ fn printHelp() void {
         \\record separator, which can cause issues with some compilers and editors.
         \\
         \\Glob Patterns:
-        \\  * matches any number of characters.
-        \\  Example: "*.zig", "src/*", "test_*.txt"
+        \\  * matches any number of characters within a directory.
+        \\  ** matches any number of characters across directories.
+        \\  Example: "*.zig", "src/**/*.zig", "test_*.txt"
     ;
     std.debug.print("{s}\n", .{help_text});
 }
