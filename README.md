@@ -5,8 +5,9 @@ A lightweight Zig utility to check and convert line endings across multiple file
 ## Features
 
 - **Multi-variant Detection**: Identifies LF (Unix), CRLF (Windows), CR (Classic Mac), and Mixed line endings.
-- **Batch Conversion**: Convert files to your preferred line ending variant in one command.
-- **Glob Support**: Target specific files or directories using wildcard patterns (e.g., `src/*.zig`).
+- **Batch Conversion**: Convert files to your preferred line ending variant.
+- **Multiple Glob Support**: Target specific files or directories using multiple wildcard patterns (e.g., `src/**/*.zig README.md`).
+- **Recursive Globbing**: Support for standard `**` recursive matching across directories.
 - **Detailed Reporting**: Shows counts for each line ending type found in a file.
 
 ## Build Instructions
@@ -26,10 +27,10 @@ The binary will be available at `./zig-out/bin/crlf` (or `crlf.exe` on Windows).
 ## Usage
 
 ### Check Line Endings
-Analyze files to see what variants they are using:
+Analyze files to see what variants they are using (supports multiple patterns):
 
 ```powershell
-./zig-out/bin/crlf check "*.txt"
+./zig-out/bin/crlf check "src/**/*.zig" "README.md"
 ```
 
 **Example Output:**

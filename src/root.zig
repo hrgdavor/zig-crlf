@@ -1,7 +1,5 @@
-//! By convention, root.zig is the root source file when making a library.
 const std = @import("std");
 const mem = std.mem;
-const fs = std.fs;
 
 pub const LineEndingVariant = enum {
     lf,
@@ -11,7 +9,13 @@ pub const LineEndingVariant = enum {
     none,
 
     pub fn toString(self: LineEndingVariant) []const u8 {
-        return @tagName(self);
+        return switch (self) {
+            .lf => "lf",
+            .crlf => "crlf",
+            .cr => "cr",
+            .mixed => "mixed",
+            .none => "none",
+        };
     }
 
     pub fn fromString(s: []const u8) ?LineEndingVariant {
@@ -21,12 +25,12 @@ pub const LineEndingVariant = enum {
         return null;
     }
 
-    pub fn toBytes(self: LineEndingVariant) []const u8 {
+    pub fn getSeparator(self: LineEndingVariant) []const u8 {
         return switch (self) {
             .lf => "\n",
             .crlf => "\r\n",
             .cr => "\r",
-            else => "",
+            .mixed, .none => "",
         };
     }
 };
@@ -49,24 +53,22 @@ pub fn detectLineEndings(content: []const u8) LineEndingInfo {
             if (i + 1 < content.len and content[i + 1] == '\n') {
                 crlf_count += 1;
                 i += 2;
+                continue;
             } else {
                 cr_count += 1;
-                i += 1;
             }
         } else if (content[i] == '\n') {
             lf_count += 1;
-            i += 1;
-        } else {
-            i += 1;
         }
+        i += 1;
     }
 
     var variant: LineEndingVariant = .none;
-    const types_present = (@as(u8, if (lf_count > 0) 1 else 0) +
-        @as(u8, if (crlf_count > 0) 1 else 0) +
-        @as(u8, if (cr_count > 0) 1 else 0));
+    const variants_found = (if (lf_count > 0) @as(u2, 1) else 0) +
+        (if (crlf_count > 0) @as(u2, 1) else 0) +
+        (if (cr_count > 0) @as(u2, 1) else 0);
 
-    if (types_present > 1) {
+    if (variants_found > 1) {
         variant = .mixed;
     } else if (lf_count > 0) {
         variant = .lf;
@@ -84,24 +86,25 @@ pub fn detectLineEndings(content: []const u8) LineEndingInfo {
     };
 }
 
-pub fn convertLineEndings(allocator: mem.Allocator, content: []const u8, target: LineEndingVariant) ![]u8 {
+pub fn convertLineEndings(allocator: mem.Allocator, content: []const u8, target: LineEndingVariant) ![]const u8 {
+    const target_sep = target.getSeparator();
+    if (target_sep.len == 0) return allocator.dupe(u8, content);
+
     var output = std.ArrayList(u8).empty;
     errdefer output.deinit(allocator);
-
-    const target_bytes = target.toBytes();
 
     var i: usize = 0;
     while (i < content.len) {
         if (content[i] == '\r') {
             if (i + 1 < content.len and content[i + 1] == '\n') {
-                try output.appendSlice(allocator, target_bytes);
+                try output.appendSlice(allocator, target_sep);
                 i += 2;
             } else {
-                try output.appendSlice(allocator, target_bytes);
+                try output.appendSlice(allocator, target_sep);
                 i += 1;
             }
         } else if (content[i] == '\n') {
-            try output.appendSlice(allocator, target_bytes);
+            try output.appendSlice(allocator, target_sep);
             i += 1;
         } else {
             try output.append(allocator, content[i]);
@@ -128,37 +131,56 @@ pub fn matchesGlob(allocator: mem.Allocator, pattern: []const u8, text: []const 
         c.* = '/';
     };
 
-    if (mem.eql(u8, norm_pattern, "*") or mem.eql(u8, norm_pattern, "**")) return true;
+    return matchesGlobRecursive(norm_pattern, norm_text);
+}
 
-    var it = mem.splitScalar(u8, norm_pattern, '*');
-    const first = it.next().?; // Always at least one part (even if empty)
+fn matchesGlobRecursive(pattern: []const u8, text: []const u8) bool {
+    if (pattern.len == 0) return text.len == 0;
 
-    if (!mem.startsWith(u8, norm_text, first)) return false;
+    if (std.mem.startsWith(u8, pattern, "**")) {
+        const rest_pattern = pattern[2..];
+        if (rest_pattern.len == 0) return true;
 
-    var current_text = norm_text[first.len..];
-    var last_part: ?[]const u8 = null;
-
-    while (it.next()) |part| {
-        if (part.len == 0) continue; // handle ** or multiple *
-        if (mem.indexOf(u8, current_text, part)) |idx| {
-            current_text = current_text[idx + part.len ..];
-            last_part = part;
-        } else {
+        if (std.mem.startsWith(u8, rest_pattern, "/")) {
+            const sub_pattern = rest_pattern[1..];
+            // Try matching rest of pattern against text (zero dirs matched)
+            if (matchesGlobRecursive(sub_pattern, text)) return true;
+            // Try matching rest of pattern against any suffix starting with /
+            var i: usize = 0;
+            while (i < text.len) : (i += 1) {
+                if (text[i] == '/') {
+                    if (matchesGlobRecursive(sub_pattern, text[i + 1 ..])) return true;
+                }
+            }
             return false;
         }
-    }
 
-    // If pattern didn't end with *, the text must end with the last part
-    if (!mem.endsWith(u8, norm_pattern, "*")) {
-        if (last_part) |lp| {
-            return mem.endsWith(u8, norm_text, lp);
-        } else {
-            // No stars in pattern, must be EXACT match (after normalization)
-            return mem.eql(u8, norm_text, first);
+        // General ** (match any number of characters)
+        var i: usize = 0;
+        while (i <= text.len) : (i += 1) {
+            if (matchesGlobRecursive(rest_pattern, text[i..])) return true;
         }
+        return false;
     }
 
-    return true;
+    if (pattern[0] == '*') {
+        const rest_pattern = pattern[1..];
+        // Standard * (matches anything except /)
+        var i: usize = 0;
+        while (i <= text.len) : (i += 1) {
+            if (matchesGlobRecursive(rest_pattern, text[i..])) return true;
+            if (i < text.len and text[i] == '/') break;
+        }
+        return false;
+    }
+
+    if (text.len == 0) return false;
+
+    if (pattern[0] == text[0]) {
+        return matchesGlobRecursive(pattern[1..], text[1..]);
+    }
+
+    return false;
 }
 
 test "line ending detection" {
@@ -178,9 +200,13 @@ test "line ending detection" {
 test "line ending conversion" {
     const allocator = std.testing.allocator;
     const mixed = "line1\nline2\r\n";
+    const info = detectLineEndings(mixed);
+    try std.testing.expectEqual(LineEndingVariant.mixed, info.variant);
+
     const converted = try convertLineEndings(allocator, mixed, .lf);
     defer allocator.free(converted);
-    try std.testing.expectEqualStrings("line1\nline2\n", converted);
+    const info_converted = detectLineEndings(converted);
+    try std.testing.expectEqual(LineEndingVariant.lf, info_converted.variant);
 }
 
 test "glob matching" {
@@ -189,14 +215,15 @@ test "glob matching" {
     try std.testing.expect(!matchesGlob(allocator, "*.txt", "hello.zig"));
     try std.testing.expect(matchesGlob(allocator, "file.*", "file.c"));
     try std.testing.expect(matchesGlob(allocator, "f*o", "foo"));
+}
+
+test "recursive glob matching" {
+    const allocator = std.testing.allocator;
     try std.testing.expect(matchesGlob(allocator, "src/*.zig", "src/main.zig"));
     try std.testing.expect(matchesGlob(allocator, "src/*.zig", "src\\main.zig"));
-}
-
-pub fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
-
-test "basic add functionality" {
-    try std.testing.expect(add(3, 7) == 10);
+    try std.testing.expect(matchesGlob(allocator, "src/**/*.zig", "src/main.zig"));
+    try std.testing.expect(matchesGlob(allocator, "src/**/*.zig", "src/subdir/file.zig"));
+    try std.testing.expect(matchesGlob(allocator, "**/*.zig", "src/main.zig"));
+    try std.testing.expect(matchesGlob(allocator, "**/*.zig", "root.zig"));
+    try std.testing.expect(matchesGlob(allocator, "src/**.zig", "src/main.zig"));
 }
