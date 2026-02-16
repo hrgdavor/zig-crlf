@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: mlugg/setup-zig@v1
         with:
-          version: 0.15.0-dev.11+821b048d2 # Using a recent 0.15 dev version or stable 0.15 when released
+          version: 0.14.0
       - name: Build
         run: zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseSmall
       - name: Package
