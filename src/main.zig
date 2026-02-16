@@ -75,7 +75,7 @@ fn handleCheck(allocator: mem.Allocator, filter_variant: ?zig_crlf.LineEndingVar
                     if (info.variant == fv) break;
                 }
 
-                std.debug.print("LF: {d: <3} | CRLF: {d: <3} | CR: {d: <3} | {s: <6} | {s}\n", .{
+                std.debug.print("LF: {d: <4} | CRLF: {d: <4} | CR: {d: <4} | {s: <6} | {s}\n", .{
                     info.lf_count,
                     info.crlf_count,
                     info.cr_count,
