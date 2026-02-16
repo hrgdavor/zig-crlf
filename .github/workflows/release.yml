@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+# 1. ADD PERMISSIONS AT THE TOP LEVEL
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -17,8 +21,6 @@ jobs:
           - x86_64-macos
           - aarch64-macos
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: goto-bus-stop/setup-zig@v2
@@ -47,15 +49,17 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    # (Optional) You can also put permissions here specifically
     steps:
       - uses: actions/checkout@v4
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          merge-multiple: true # 2. THIS FLATTENS THE FOLDER STRUCTURE
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          files: artifacts/*   # 3. NOW THIS WILL FIND ALL FILES
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
