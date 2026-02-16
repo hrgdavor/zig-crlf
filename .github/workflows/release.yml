@@ -17,6 +17,8 @@ jobs:
           - x86_64-macos
           - aarch64-macos
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: goto-bus-stop/setup-zig@v2
