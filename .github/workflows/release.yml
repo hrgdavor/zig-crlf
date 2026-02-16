@@ -26,17 +26,21 @@ jobs:
         run: zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseSmall
       - name: Package
         run: |
-          mkdir -p bin
-          if [ "${{ matrix.target }}" == *"windows"* ]; then
-            cp zig-out/bin/crlf.exe bin/crlf-${{ matrix.target }}.exe
+          mkdir -p dist
+          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            cp zig-out/bin/crlf.exe crlf.exe
+            zip crlf-${{ matrix.target }}.zip crlf.exe
+            mv crlf-${{ matrix.target }}.zip dist/
           else
-            cp zig-out/bin/crlf bin/crlf-${{ matrix.target }}
+            cp zig-out/bin/crlf crlf
+            tar -czf crlf-${{ matrix.target }}.tar.gz crlf
+            mv crlf-${{ matrix.target }}.tar.gz dist/
           fi
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: crlf-${{ matrix.target }}
-          path: bin/*
+          path: dist/*
 
   release:
     needs: build
