@@ -2,6 +2,8 @@
 
 A lightweight Zig utility to check and convert line endings across multiple files using glob patterns.
 
+> Download pre-build binaries for your OS from the [releases](https://github.com/hrgdavor/zig-crlf/releases) page.
+
 ## Features
 
 - **Multi-variant Detection**: Identifies LF (Unix), CRLF (Windows), CR (Classic Mac), and Mixed line endings.
