@@ -10,9 +10,9 @@ pub const LineEndingVariant = enum {
 
     pub fn toString(self: LineEndingVariant) []const u8 {
         return switch (self) {
-            .lf => "lf",
-            .crlf => "crlf",
-            .cr => "cr",
+            .lf => "LF",
+            .crlf => "CRLF",
+            .cr => "CR",
             .mixed => "mixed",
             .none => "none",
         };
