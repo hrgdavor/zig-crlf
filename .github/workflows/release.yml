@@ -27,7 +27,7 @@ jobs:
         with:
           version: 0.15.1
       - name: Build
-        run: zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseSmall
+        run: zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseSafe
       - name: Package
         run: |
           mkdir -p dist

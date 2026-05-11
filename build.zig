@@ -41,6 +41,9 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
+    // Import the build manifest directly and expose its version to the compiled binaries.
+    const zon = @import("build.zig.zon");
+
     // Here we define an executable. An executable needs to have a root module
     // which needs to expose a `main` function. While we could add a main function
     // to the module defined above, it's sometimes preferable to split business
@@ -57,6 +60,15 @@ pub fn build(b: *std.Build) void {
     //
     // If neither case applies to you, feel free to delete the declaration you
     // don't need and to put everything under a single module.
+    const zigcli_dep = b.dependency("zigcli", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const zigcli_mod = zigcli_dep.module("zigcli");
+
+    const options = b.addOptions();
+    options.addOption([]const u8, "version", zon.version);
+
     const exe = b.addExecutable(.{
         .name = "crlf",
         .root_module = b.createModule(.{
@@ -79,9 +91,16 @@ pub fn build(b: *std.Build) void {
                 // can be extremely useful in case of collisions (which can happen
                 // importing modules from different packages).
                 .{ .name = "zig_crlf", .module = mod },
+                .{ .name = "zigcli", .module = zigcli_mod },
             },
         }),
     });
+
+    if (optimize != .Debug) {
+        exe.root_module.strip = true;
+    }
+
+    exe.root_module.addOptions("config", options);
 
     // This declares intent for the executable to be installed into the
     // install prefix when running `zig build` (i.e. when executing the default

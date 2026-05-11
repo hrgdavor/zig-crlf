@@ -29,3 +29,4 @@ sync_log*
 build_error.txt
 .ssh
 test_*
+/zig-pkg
