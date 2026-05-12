@@ -9,7 +9,7 @@ A lightweight Zig utility to check and convert line endings across files.
 - **Multi-variant Detection**: Identifies LF (Unix), CRLF (Windows), CR (Classic Mac), and Mixed line endings.
 - **Batch Conversion**: Convert files to your preferred line ending variant.
 - **Shell-Expansion Friendly by Default**: Positional arguments are treated as explicit file paths.
-- **Optional Recursive Glob Mode**: Enable legacy recursive pattern search with `--glob` / `-g`.
+- **Optional Recursive Glob Mode**: Enable recursive pattern search with `--glob` / `-g`.
 - **Detailed Reporting**: Shows counts for each line ending type found in a file.
 
 ## Usage
@@ -35,7 +35,7 @@ shopt -s globstar
 ./zig-out/bin/crlf check src/**/*.zig
 ```
 
-Recursive glob mode inside `crlf` (legacy behavior):
+Recursive glob mode inside `crlf`:
 
 ```powershell
 ./zig-out/bin/crlf check --glob "src/**/*.zig"
