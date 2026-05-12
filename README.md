@@ -12,36 +12,13 @@ A lightweight Zig utility to check and convert line endings across files.
 - **Optional Recursive Glob Mode**: Enable legacy recursive pattern search with `--glob` / `-g`.
 - **Detailed Reporting**: Shows counts for each line ending type found in a file.
 
-## Build Instructions
-
-### Prerequisites
-- [Zig 0.16.0](https://ziglang.org/download/) or later.
-
-### Build from Source
-To build the utility for your native platform:
-
-```powershell
-zig build -Doptimize=ReleaseSafe
-```
-
-The binary will be available at `./zig-out/bin/crlf` (or `crlf.exe` on Windows).
-
-To build for other platforms: `x86_64-windows`, `aarch64-windows`, `x86_64-linux`, `aarch64-linux`, `x86_64-macos`, `aarch64-macos`
-
-```
-zig build -Dtarget={platform} -Doptimize=ReleaseSafe
-```
-
 ## Usage
 
-## Behavior Change (Important)
 
-Default behavior changed:
+- positional args are explicit file paths.
+- recursive glob matching is available only with `--glob` / `-g`.
 
-- **Now (default):** positional args are explicit file paths.
-- **Legacy behavior:** recursive glob matching is available only with `--glob` / `-g`.
-
-This makes `crlf` align with shell expansion workflows, where your shell expands patterns like `*.java` before invoking the command.
+This makes `crlf` align with shell expansion workflows on linux, where your shell expands patterns like `*.java` before invoking the command.
 
 ### Shell expansion vs recursive glob mode
 
@@ -161,3 +138,24 @@ For more details and variant aliases:
 - **LF** (Line Feed, `\n`): Standard on Linux, Unix, and modern macOS.
 - **CRLF** (Carriage Return + Line Feed, `\r\n`): Standard on Windows.
 - **CR** (Carriage Return, `\r`): Standard on classic Mac OS (pre-OSX).
+
+
+# Build Instructions
+
+## Prerequisites
+- [Zig 0.16.0](https://ziglang.org/download/) or later.
+
+## Build from Source
+To build the utility for your native platform:
+
+```powershell
+zig build -Doptimize=ReleaseSafe
+```
+
+The binary will be available at `./zig-out/bin/crlf` (or `crlf.exe` on Windows).
+
+To build for other platforms: `x86_64-windows`, `aarch64-windows`, `x86_64-linux`, `aarch64-linux`, `x86_64-macos`, `aarch64-macos`
+
+```
+zig build -Dtarget={platform} -Doptimize=ReleaseSafe
+```
