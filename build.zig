@@ -60,12 +60,6 @@ pub fn build(b: *std.Build) void {
     //
     // If neither case applies to you, feel free to delete the declaration you
     // don't need and to put everything under a single module.
-    const zigcli_dep = b.dependency("zigcli", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const zigcli_mod = zigcli_dep.module("zigcli");
-
     const options = b.addOptions();
     options.addOption([]const u8, "version", zon.version);
 
@@ -91,7 +85,6 @@ pub fn build(b: *std.Build) void {
                 // can be extremely useful in case of collisions (which can happen
                 // importing modules from different packages).
                 .{ .name = "zig_crlf", .module = mod },
-                .{ .name = "zigcli", .module = zigcli_mod },
             },
         }),
     });

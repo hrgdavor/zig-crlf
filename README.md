@@ -14,11 +14,11 @@ A lightweight Zig utility to check and convert line endings across files.
 
 ## Usage
 
+- Positional args are explicit file paths by default.
+- Recursive glob matching is opt-in with `--glob` / `-g`.
+- Options (`--not`, `--is`, `--glob`, `--variant`) can appear **anywhere** — before or after the path arguments.
 
-- positional args are explicit file paths.
-- recursive glob matching is available only with `--glob` / `-g`.
-
-This makes `crlf` align with shell expansion workflows on linux, where your shell expands patterns like `*.java` before invoking the command.
+This makes `crlf` align with shell expansion workflows on Linux, where your shell expands patterns like `*.java` before invoking the command.
 
 ### Shell expansion vs recursive glob mode
 
@@ -39,7 +39,7 @@ Recursive glob mode inside `crlf`:
 
 ```powershell
 ./zig-out/bin/crlf check --glob "src/**/*.zig"
-./zig-out/bin/crlf convert --variant unix --glob "src/**/*.zig"
+./zig-out/bin/crlf convert -v unix --glob "src/**/*.zig"
 ```
 
 ### How to target only the current folder with `--glob`
@@ -86,53 +86,57 @@ LF: 2   | CRLF: 0   | CR: 0   | lf     | test_mixed.txt
 ```
 
 ### Filter By Variant
-Use `--not` to exclude files with a specific line ending variant:
+Use `--not` / `-n` to exclude files with a specific line ending variant:
 
 ```powershell
 ./zig-out/bin/crlf check --not lf src/main.zig src/args.zig
+./zig-out/bin/crlf check src/main.zig src/args.zig --not lf
 ```
 
 This is useful for finding files that need conversion to a specific variant.
 
-Use `--is` for the opposite behavior (include only one variant):
+Use `--is` / `-i` for the opposite behavior (include only one variant):
 
 ```powershell
 ./zig-out/bin/crlf check --is crlf src/main.zig src/args.zig
 ```
 
 ### Convert Line Endings
-Convert files to a specific variant (`win`/`crlf`, `unix`/`lf`, or `mac`/`cr`):
+Convert files to a specific variant (`win`/`crlf`, `unix`/`lf`, or `mac`/`cr`).
+`--variant` / `-v` is required:
 
 ```powershell
 ./zig-out/bin/crlf convert --variant unix src/main.zig src/args.zig
+./zig-out/bin/crlf convert -v unix src/main.zig src/args.zig
 ```
 
 Convert with filtering (for example, skip already-LF files):
 
 ```powershell
-./zig-out/bin/crlf convert --variant unix --not lf src/main.zig src/args.zig
+./zig-out/bin/crlf convert -v unix --not lf src/main.zig src/args.zig
 ```
 
 Convert only files currently using CRLF:
 
 ```powershell
-./zig-out/bin/crlf convert --variant unix --is crlf src/main.zig src/args.zig
+./zig-out/bin/crlf convert -v unix --is crlf src/main.zig src/args.zig
 ```
 
-### Recursive glob mode examples (`--glob`)
+### Recursive glob mode examples (`--glob` / `-g`)
 
 ```powershell
 ./zig-out/bin/crlf check --glob "src/**/*.zig" "README.md"
-./zig-out/bin/crlf check --glob --not lf "src/**/*.zig"
-./zig-out/bin/crlf convert --variant unix --glob --is crlf "src/**/*.zig"
+./zig-out/bin/crlf check -g "src/**/*.zig" --not lf
+./zig-out/bin/crlf convert -v unix -g --is crlf "src/**/*.zig"
 ```
 
 ### Help
-For more details and variant aliases:
 
 ```powershell
 ./zig-out/bin/crlf --help
 ```
+
+A single help screen covers all commands and options, including the full list of variant aliases.
 
 ## Line Ending Variants
 - **LF** (Line Feed, `\n`): Standard on Linux, Unix, and modern macOS.
