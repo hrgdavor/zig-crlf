@@ -141,7 +141,7 @@ A single help screen covers all commands and options, including the full list of
 ## Line Ending Variants
 - **LF** (Line Feed, `\n`): Standard on Linux, Unix, and modern macOS.
 - **CRLF** (Carriage Return + Line Feed, `\r\n`): Standard on Windows.
-- **CR** (Carriage Return, `\r`): Standard on classic Mac OS (pre-OSX).
+- **CR** (Carriage Return, `\r`): Standard on classic Mac OS (pre-OSX)
 
 
 # Build Instructions
